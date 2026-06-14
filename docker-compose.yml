@@ -1,0 +1,10 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: banking-postgres
+    environment:
+      POSTGRES_DB: banking_lab
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: bankinglab
+    ports:
+      - "15570:5432"
