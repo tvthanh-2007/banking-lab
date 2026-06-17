@@ -3,6 +3,7 @@ package com.banking.banking_lab.controller;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +32,14 @@ public class CustomerController {
   @PostMapping("/customers")
   public CustomerResponse createCustomer(@Valid @RequestBody CreateCustomerRequest req) {
     Customer customer =customerService.create(req.getName());
+
+    return new CustomerResponse(customer.getId(), customer.getName());
+  }
+
+  @GetMapping("/customers/{id}")
+  public CustomerResponse getCustomer(@PathVariable Long id) {
+
+    Customer customer = customerService.findById(id);
 
     return new CustomerResponse(customer.getId(), customer.getName());
   }

@@ -8,4 +8,6 @@ public interface CustomerService {
   List<Customer> findAll();
 
   Customer create(String name);
+
+  Customer findById(Long id);
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.banking.banking_lab.entity.Customer;
+import com.banking.banking_lab.exception.CustomerNotFoundException;
 import com.banking.banking_lab.repository.CustomerRepository;
 
 @Service
@@ -24,5 +25,12 @@ public class CustomerServiceImpl implements CustomerService {
   @Override
   public Customer create(String name) {
     return customerRepository.save(new Customer(name));
+  }
+
+  @Override
+  public Customer findById(Long id) {
+    return customerRepository.findById(id).orElseThrow(
+      () -> new CustomerNotFoundException(id)
+    );
   }
 }

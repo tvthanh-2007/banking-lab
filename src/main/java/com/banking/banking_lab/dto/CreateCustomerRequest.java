@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public class CreateCustomerRequest {
 
-  @NotBlank
+  @NotBlank(message = "Customer name is required")
   private String name;
 
   public CreateCustomerRequest() {
