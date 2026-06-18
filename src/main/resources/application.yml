@@ -1,0 +1,14 @@
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:15570/banking_lab
+    username: postgres
+    password: bankinglab
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  application:
+    name: banking-lab
