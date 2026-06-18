@@ -33,4 +33,34 @@ public class CustomerServiceImpl implements CustomerService {
       () -> new CustomerNotFoundException(id)
     );
   }
+
+  @Override
+  public List<Customer> searchContaining(String keyword) {
+    return customerRepository.findByNameContaining(keyword);
+  }
+
+  @Override
+  public List<Customer> searchExact(String name) {
+    return customerRepository.findByName(name);
+  }
+
+  @Override
+  public List<Customer> searchStartingWith(String prefix) {
+    return customerRepository.findByNameStartingWith(prefix);
+  }
+
+  @Override
+  public List<Customer> searchEndingWith(String suffix) {
+    return customerRepository.findByNameEndingWith(suffix);
+  }
+
+  @Override
+  public List<Customer> searchJPQL(String name) {
+    return customerRepository.searchByName(name);
+  }
+
+  @Override
+  public List<Customer> searchNative(String name) {
+    return customerRepository.searchNative(name);
+  }
 }

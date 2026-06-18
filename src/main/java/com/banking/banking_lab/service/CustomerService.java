@@ -10,4 +10,16 @@ public interface CustomerService {
   Customer create(String name);
 
   Customer findById(Long id);
+
+  List<Customer> searchContaining(String keyword);
+
+  List<Customer> searchExact(String name);
+
+  List<Customer> searchStartingWith(String prefix);
+
+  List<Customer> searchEndingWith(String suffix);
+
+  List<Customer> searchJPQL(String name);
+
+  List<Customer> searchNative(String name);
 }
