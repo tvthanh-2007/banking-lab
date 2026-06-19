@@ -2,6 +2,7 @@
 package com.banking.banking_lab.controller;
 
 import com.banking.banking_lab.dto.CreateCustomerRequest;
+import com.banking.banking_lab.dto.CustomerResponse;
 import com.banking.banking_lab.entity.Customer;
 import com.banking.banking_lab.exception.CustomerNotFoundException;
 import com.banking.banking_lab.service.CustomerServiceImpl;
@@ -11,10 +12,14 @@ import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -40,19 +45,24 @@ class CustomerControllerTest {
     @Test
     void getCustomers_success() throws Exception {
 
-        List<Customer> customers = List.of(
-                new Customer("A"),
-                new Customer("B")
-        );
+        List<CustomerResponse> customers = List.of(
+                new CustomerResponse(1L,"A"),
+                new CustomerResponse(2L,"B")
+            );
 
-        when(customerServiceImpl.findAll())
-                .thenReturn(customers);
+        Page<CustomerResponse> page = new PageImpl<>(customers);
 
-        mockMvc.perform(get("/customers"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].name").value("A"))
-                .andExpect(jsonPath("$[1].name").value("B"));
+
+        when(customerServiceImpl.findAll(any(Pageable.class)))
+            .thenReturn(page);
+
+        mockMvc.perform(get("/customers")
+                .param("page","0")
+                .param("size","5")
+        ).andExpect(status().isOk())
+         .andExpect(jsonPath("$.content.length()").value(2))
+         .andExpect(jsonPath("$.content[0].name").value("A"))
+         .andExpect(jsonPath("$.content[1].name").value("B"));
     }
 
     // =========================

@@ -2,11 +2,16 @@ package com.banking.banking_lab.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.banking.banking_lab.dto.CustomerResponse;
 import com.banking.banking_lab.entity.Customer;
 import com.banking.banking_lab.exception.CustomerNotFoundException;
 import com.banking.banking_lab.repository.CustomerRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
@@ -17,10 +22,10 @@ public class CustomerServiceImpl implements CustomerService {
     this.customerRepository = customerRepository;
   }
 
-  @Override
-  public List<Customer> findAll() {
-    return customerRepository.findAll();
-  }
+  // @Override
+  // public List<Customer> findAll() {
+  //   return customerRepository.findAll();
+  // }
 
   @Override
   public Customer create(String name) {
@@ -62,5 +67,22 @@ public class CustomerServiceImpl implements CustomerService {
   @Override
   public List<Customer> searchNative(String name) {
     return customerRepository.searchNative(name);
+  }
+
+  @Override
+  @Transactional
+  public void updateCustomerName(Long id, String name) {
+    Customer customer = customerRepository.findById(id).orElseThrow();
+
+    customer.setName(name);
+  }
+
+  @Override
+  public Page<CustomerResponse> findAll(Pageable pageable) {
+    return customerRepository.findAll(pageable).map(customer -> new CustomerResponse(
+                                                                            customer.getId(),
+                                                                            customer.getName()
+                                                                    )
+                                                   );
   }
 }

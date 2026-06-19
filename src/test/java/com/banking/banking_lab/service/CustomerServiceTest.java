@@ -16,7 +16,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
+import com.banking.banking_lab.dto.CustomerResponse;
 import com.banking.banking_lab.entity.Customer;
 import com.banking.banking_lab.repository.CustomerRepository;
 
@@ -40,16 +44,27 @@ class CustomerServiceTest {
                 new Customer("B")
         );
 
-        when(customerRepository.findAll())
-                .thenReturn(mockData);
 
-        List<Customer> result = customerServiceImpl.findAll();
+        Page<Customer> page = new PageImpl<>(mockData);
 
-        assertEquals(2, result.size());
-        assertEquals("A", result.get(0).getName());
-        assertEquals("B", result.get(1).getName());
+        when(customerRepository.findAll(any(PageRequest.class)))
+            .thenReturn(page);
 
-        verify(customerRepository, times(1)).findAll();
+        Page<CustomerResponse> result = customerServiceImpl.findAll(
+             PageRequest.of(0, 10)
+        );
+
+        assertEquals(2, result.getContent().size());
+
+        assertEquals(
+            "A",
+            result.getContent()
+                  .get(0)
+                  .getName()
+        );
+
+
+        verify(customerRepository).findAll(any(PageRequest.class));
     }
 
      // =========================
