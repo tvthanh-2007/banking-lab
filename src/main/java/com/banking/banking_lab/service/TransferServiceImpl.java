@@ -1,18 +1,19 @@
 package com.banking.banking_lab.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.banking.banking_lab.dto.TransactionResponse;
 import com.banking.banking_lab.dto.TransferRequest;
 import com.banking.banking_lab.entity.Account;
 import com.banking.banking_lab.entity.IdempotencyKey;
 import com.banking.banking_lab.entity.Transaction;
+import com.banking.banking_lab.exception.InsufficientBalanceException;
 import com.banking.banking_lab.mapper.TransactionMapper;
 import com.banking.banking_lab.repository.AccountRepository;
 import com.banking.banking_lab.repository.IdempotencyKeyRepository;
 import com.banking.banking_lab.repository.TransactionRepository;
-
-import jakarta.transaction.Transactional;
 
 @Service
 public class TransferServiceImpl implements TransferService {
@@ -39,7 +40,7 @@ public class TransferServiceImpl implements TransferService {
   }
 
   @Override
-  @Transactional
+  @Transactional(isolation = Isolation.READ_COMMITTED)
   public TransactionResponse transfer(String key, TransferRequest request) {
 
     var existing = idempotencyKeyRepository.findByKey(key);
@@ -52,15 +53,35 @@ public class TransferServiceImpl implements TransferService {
       return transactionMapper.map(oldTransaction);
     }
 
-    Account fromAccount = accountRepository.findByIdForUpdate(request.getFromAccountId()).orElseThrow();
+    Long fromId = request.getFromAccountId();
 
-    Account toAccount = accountRepository.findByIdForUpdate(request.getToAccountId()).orElseThrow();
+    Long toId = request.getToAccountId();
+
+    Long firstId = Math.min(fromId, toId);
+
+    Long secondId = Math.max(fromId, toId);
+
+    Account firstAccount = accountRepository.findByIdForUpdate(firstId).orElseThrow();
+
+    Account secondAccount = accountRepository.findByIdForUpdate(secondId).orElseThrow();
 
     // Account fromAccount =
     // accountRepository.findById(request.getFromAccountId()).orElseThrow();
 
     // Account toAccount =
     // accountRepository.findById(request.getToAccountId()).orElseThrow();
+
+    Account fromAccount;
+
+    Account toAccount;
+
+    if (fromId.equals(firstId)) {
+      fromAccount = firstAccount;
+      toAccount = secondAccount;
+    } else {
+      fromAccount = secondAccount;
+      toAccount = firstAccount;
+    }
 
     fromAccount.withdraw(request.getAmount());
 
