@@ -1,7 +1,5 @@
 package com.banking.banking_lab.service;
 
-import java.util.Optional;
-
 import org.springframework.stereotype.Service;
 
 import com.banking.banking_lab.dto.TransactionResponse;
@@ -57,6 +55,12 @@ public class TransferServiceImpl implements TransferService {
     Account fromAccount = accountRepository.findByIdForUpdate(request.getFromAccountId()).orElseThrow();
 
     Account toAccount = accountRepository.findByIdForUpdate(request.getToAccountId()).orElseThrow();
+
+    // Account fromAccount =
+    // accountRepository.findById(request.getFromAccountId()).orElseThrow();
+
+    // Account toAccount =
+    // accountRepository.findById(request.getToAccountId()).orElseThrow();
 
     fromAccount.withdraw(request.getAmount());
 

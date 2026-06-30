@@ -19,6 +19,9 @@ public class Account {
 	@Column(nullable = false)
 	private BigDecimal balance;
 
+	@Version
+	private Long version;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "customer_id")
 	private Customer customer;
@@ -41,6 +44,10 @@ public class Account {
 
 	public BigDecimal getBalance() {
 		return balance;
+	}
+
+	public Long getVersion() {
+		return version;
 	}
 
 	public Customer getCustomer() {
