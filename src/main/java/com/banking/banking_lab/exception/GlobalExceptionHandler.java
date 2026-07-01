@@ -15,10 +15,9 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleCustomerNotFound(CustomerNotFoundException ex) {
         return new ErrorResponse(
-            LocalDateTime.now(),
-            HttpStatus.NOT_FOUND.value(),
-            ex.getMessage()
-        );
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -26,13 +25,21 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleValidationException(MethodArgumentNotValidException ex) {
 
         String message = ex.getBindingResult()
-            .getFieldError()
-            .getDefaultMessage();
+                .getFieldError()
+                .getDefaultMessage();
 
         return new ErrorResponse(
-            LocalDateTime.now(),
-            HttpStatus.BAD_REQUEST.value(),
-            message
-        );
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                message);
+    }
+
+    @ExceptionHandler(AccountNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleAccountNotFound(AccountNotFoundException ex) {
+        return new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage());
     }
 }

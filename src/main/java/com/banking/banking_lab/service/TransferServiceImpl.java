@@ -9,7 +9,7 @@ import com.banking.banking_lab.dto.TransferRequest;
 import com.banking.banking_lab.entity.Account;
 import com.banking.banking_lab.entity.IdempotencyKey;
 import com.banking.banking_lab.entity.Transaction;
-import com.banking.banking_lab.exception.InsufficientBalanceException;
+import com.banking.banking_lab.exception.AccountNotFoundException;
 import com.banking.banking_lab.mapper.TransactionMapper;
 import com.banking.banking_lab.repository.AccountRepository;
 import com.banking.banking_lab.repository.IdempotencyKeyRepository;
@@ -61,9 +61,11 @@ public class TransferServiceImpl implements TransferService {
 
     Long secondId = Math.max(fromId, toId);
 
-    Account firstAccount = accountRepository.findByIdForUpdate(firstId).orElseThrow();
+    Account firstAccount = accountRepository.findByIdForUpdate(firstId).orElseThrow(
+        () -> new AccountNotFoundException(firstId));
 
-    Account secondAccount = accountRepository.findByIdForUpdate(secondId).orElseThrow();
+    Account secondAccount = accountRepository.findByIdForUpdate(secondId).orElseThrow(
+        () -> new AccountNotFoundException(secondId));
 
     // Account fromAccount =
     // accountRepository.findById(request.getFromAccountId()).orElseThrow();
