@@ -2,6 +2,8 @@ package com.banking.banking_lab.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -39,6 +41,9 @@ class TransferServiceTest {
 
 	@Mock
 	private IdempotencyKeyRepository idempotencyRepository;
+
+	@Mock
+	private AuditService auditService;
 
 	@Mock
 	private TransactionMapper transactionMapper;
@@ -84,6 +89,7 @@ class TransferServiceTest {
 
 		verify(idempotencyRepository).save(any(IdempotencyKey.class));
 
+		verify(auditService).saveAudit(eq("TRANSFER_SUCCESS"), anyString());
 	}
 
 	// =====================================
@@ -117,6 +123,8 @@ class TransferServiceTest {
 		verify(transactionRepository, never()).save(any());
 
 		verify(idempotencyRepository, never()).save(any());
+
+		verify(auditService).saveAudit(eq("TRANSFER_FAILED"), anyString());
 
 	}
 

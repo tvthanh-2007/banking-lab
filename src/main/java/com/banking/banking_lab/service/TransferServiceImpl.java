@@ -1,5 +1,7 @@
 package com.banking.banking_lab.service;
 
+import java.text.MessageFormat;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,87 +20,112 @@ import com.banking.banking_lab.repository.TransactionRepository;
 @Service
 public class TransferServiceImpl implements TransferService {
 
-  private final AccountRepository accountRepository;
+	private final AccountRepository accountRepository;
 
-  private final TransactionRepository transactionRepository;
+	private final TransactionRepository transactionRepository;
 
-  private final IdempotencyKeyRepository idempotencyKeyRepository;
+	private final IdempotencyKeyRepository idempotencyKeyRepository;
 
-  private final TransactionMapper transactionMapper;
+	private final AuditService auditService;
 
-  public TransferServiceImpl(
-      AccountRepository accountRepository,
-      TransactionRepository transactionRepository,
-      IdempotencyKeyRepository idempotencyKeyRepository,
-      TransactionMapper transactionMapper) {
+	private final TransactionMapper transactionMapper;
 
-    this.accountRepository = accountRepository;
-    this.transactionRepository = transactionRepository;
-    this.idempotencyKeyRepository = idempotencyKeyRepository;
-    this.transactionMapper = transactionMapper;
+	public TransferServiceImpl(
+			AccountRepository accountRepository,
+			TransactionRepository transactionRepository,
+			IdempotencyKeyRepository idempotencyKeyRepository,
+			TransactionMapper transactionMapper,
+			AuditService auditService) {
 
-  }
+		this.accountRepository = accountRepository;
+		this.transactionRepository = transactionRepository;
+		this.idempotencyKeyRepository = idempotencyKeyRepository;
+		this.transactionMapper = transactionMapper;
+		this.auditService = auditService;
 
-  @Override
-  @Transactional(isolation = Isolation.READ_COMMITTED)
-  public TransactionResponse transfer(String key, TransferRequest request) {
+	}
 
-    var existing = idempotencyKeyRepository.findByKey(key);
+	@Override
+	@Transactional(isolation = Isolation.READ_COMMITTED)
+	public TransactionResponse transfer(String key, TransferRequest request) {
 
-    if (existing.isPresent()) {
-      Transaction oldTransaction = transactionRepository
-          .findById(existing.get().getTransactionId())
-          .orElseThrow();
+		try {
+			var existing = idempotencyKeyRepository.findByKey(key);
 
-      return transactionMapper.map(oldTransaction);
-    }
+			if (existing.isPresent()) {
+				Transaction oldTransaction = transactionRepository
+						.findById(existing.get().getTransactionId())
+						.orElseThrow();
 
-    Long fromId = request.getFromAccountId();
+				return transactionMapper.map(oldTransaction);
+			}
 
-    Long toId = request.getToAccountId();
+			Long fromId = request.getFromAccountId();
 
-    Long firstId = Math.min(fromId, toId);
+			Long toId = request.getToAccountId();
 
-    Long secondId = Math.max(fromId, toId);
+			Long firstId = Math.min(fromId, toId);
 
-    Account firstAccount = accountRepository.findByIdForUpdate(firstId).orElseThrow(
-        () -> new AccountNotFoundException(firstId));
+			Long secondId = Math.max(fromId, toId);
 
-    Account secondAccount = accountRepository.findByIdForUpdate(secondId).orElseThrow(
-        () -> new AccountNotFoundException(secondId));
+			Account firstAccount = accountRepository.findByIdForUpdate(firstId).orElseThrow(
+					() -> new AccountNotFoundException(firstId));
 
-    // Account fromAccount =
-    // accountRepository.findById(request.getFromAccountId()).orElseThrow();
+			Account secondAccount = accountRepository.findByIdForUpdate(secondId).orElseThrow(
+					() -> new AccountNotFoundException(secondId));
 
-    // Account toAccount =
-    // accountRepository.findById(request.getToAccountId()).orElseThrow();
+			// Account fromAccount =
+			// accountRepository.findById(request.getFromAccountId()).orElseThrow();
 
-    Account fromAccount;
+			// Account toAccount =
+			// accountRepository.findById(request.getToAccountId()).orElseThrow();
 
-    Account toAccount;
+			Account fromAccount;
 
-    if (fromId.equals(firstId)) {
-      fromAccount = firstAccount;
-      toAccount = secondAccount;
-    } else {
-      fromAccount = secondAccount;
-      toAccount = firstAccount;
-    }
+			Account toAccount;
 
-    fromAccount.withdraw(request.getAmount());
+			if (fromId.equals(firstId)) {
+				fromAccount = firstAccount;
+				toAccount = secondAccount;
+			} else {
+				fromAccount = secondAccount;
+				toAccount = firstAccount;
+			}
 
-    toAccount.deposit(request.getAmount());
+			fromAccount.withdraw(request.getAmount());
 
-    Transaction transaction = new Transaction(
-        fromAccount,
-        toAccount,
-        request.getAmount(),
-        "TRANSFER");
+			toAccount.deposit(request.getAmount());
 
-    transactionRepository.save(transaction);
+			Transaction transaction = new Transaction(
+					fromAccount,
+					toAccount,
+					request.getAmount(),
+					"TRANSFER");
 
-    idempotencyKeyRepository.save(new IdempotencyKey(key, transaction.getId()));
+			transactionRepository.save(transaction);
 
-    return transactionMapper.map(transaction);
-  }
+			idempotencyKeyRepository.save(new IdempotencyKey(key, transaction.getId()));
+
+			auditService.saveAudit(
+					"TRANSFER_SUCCESS",
+					MessageFormat.format(
+							"Transfer from {0} to {1} with {2} amount",
+							fromId,
+							toId,
+							request.getAmount()));
+
+			return transactionMapper.map(transaction);
+		} catch (Exception e) {
+			auditService.saveAudit(
+					"TRANSFER_FAILED",
+					MessageFormat.format(
+							"Transfer from {0} to {1} with {2} amount",
+							request.getFromAccountId(),
+							request.getToAccountId(),
+							request.getAmount()));
+
+			throw e;
+		}
+
+	}
 }
